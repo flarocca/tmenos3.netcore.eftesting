@@ -11,15 +11,12 @@ namespace TMenos3.NetCore.EFTesting.Tests
 {
     public class PlayersRepositoryTests
     {
-        private const string CONNECTION_STRING =
-            "Data Source=.;Initial Catalog=TestApp;Trusted_Connection=True;";
-
         [Fact]
         public async Task AddAsync_TeamExistsAndPlayerIsValid_PlayerIsAdded()
         {
             // Arrange
             var options = new DbContextOptionsBuilder()
-                .UseSqlServer(CONNECTION_STRING)
+                .UseInMemoryDatabase(":inmemory:")
                 .Options;
 
             var team = new Team
@@ -68,7 +65,7 @@ namespace TMenos3.NetCore.EFTesting.Tests
         {
             // Arrange
             var options = new DbContextOptionsBuilder()
-                .UseSqlServer(CONNECTION_STRING)
+                .UseInMemoryDatabase(":inmemory:")
                 .Options;
 
             using (var context = new AppDbContext(options))
