@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
@@ -14,8 +15,11 @@ namespace TMenos3.NetCore.EFTesting.Tests
         public async Task AddAsync_ValidTeam_TeamIsAdded()
         {
             // Arrange
+            using var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
             var options = new DbContextOptionsBuilder()
-                .UseInMemoryDatabase(":inmemory:")
+                .UseSqlite(connection)
                 .Options;
 
             var teamToAdd = new Team
@@ -49,8 +53,11 @@ namespace TMenos3.NetCore.EFTesting.Tests
         public async Task GetAsync_TeamWithIdExists_TeamIsRetrieved()
         {
             // Arrange
+            using var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
             var options = new DbContextOptionsBuilder()
-                .UseInMemoryDatabase(":inmemory:")
+                .UseSqlite(connection)
                 .Options;
 
             var team = new Team
