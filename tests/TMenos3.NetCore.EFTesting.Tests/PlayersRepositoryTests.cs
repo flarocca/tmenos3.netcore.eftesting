@@ -1,40 +1,92 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
+using TMenos3.NetCore.EFTesting.Database;
+using TMenos3.NetCore.EFTesting.Database.Exceptions;
+using TMenos3.NetCore.EFTesting.Database.Models;
+using TMenos3.NetCore.EFTesting.Database.Repositories;
 using Xunit;
 
 namespace TMenos3.NetCore.EFTesting.Tests
 {
     public class PlayersRepositoryTests
     {
+        private const string CONNECTION_STRING =
+            "Data Source=.;Initial Catalog=TestApp;Trusted_Connection=True;";
+
         [Fact]
-        public void AddAsync_TeamExistsAndPlayerIsValid_PlayerIsAdded()
+        public async Task AddAsync_TeamExistsAndPlayerIsValid_PlayerIsAdded()
         {
             // Arrange
-            // 1- Create AppDbContext instance
-            // 2- Add a team
-            // 3- Create PlayerRepository instance
-            // 4- Create player to add
+            var options = new DbContextOptionsBuilder()
+                .UseSqlServer(CONNECTION_STRING)
+                .Options;
 
-            // Act
-            // 4- Call repository.AddAsync(player)
+            var team = new Team
+            {
+                Name = "Test team",
+                FoundedYear = 2020
+            };
+            Guid playerAddedId;
 
-            // Assert
-            // 5- Verify context.Players.Any(player => 
-            //        player.TeamId == teamId &&
-            //        player.Id == playerAddedId)
+            using (var context = new AppDbContext(options))
+            {
+                await context.Database.EnsureCreatedAsync();
+
+                context.Teams.Add(team);
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new AppDbContext(options))
+            {
+                var repository = new PlayersRepository(context);
+                var player = new Player
+                {
+                    FirstName = "Test",
+                    LastName = "Player",
+                    Position = PositionType.Defender,
+                    TeamId = team.Id
+                };
+
+                // Act
+                playerAddedId = await repository.AddAsync(player);
+            }
+
+            using (var context = new AppDbContext(options))
+            {
+                // Assert
+                var result = await context.Players
+                    .AnyAsync(player => player.TeamId == team.Id &&
+                                        player.Id == playerAddedId);
+
+                Assert.True(result);
+            }
         }
 
         [Fact]
-        public void AddAsync_TeamDoesNotExistAndPlayerIsValid_TeamNotFoundExceptionIsThrown()
+        public async Task AddAsync_TeamDoesNotExistAndPlayerIsValid_TeamNotFoundExceptionIsThrown()
         {
             // Arrange
-            // 1- Create AppDbContext instance
-            // 3- Create PlayerRepository instance
-            // 4- Create player to add
+            var options = new DbContextOptionsBuilder()
+                .UseSqlServer(CONNECTION_STRING)
+                .Options;
 
-            // Act
-            // 4- Call repository.AddAsync(player)
+            using (var context = new AppDbContext(options))
+            {
+                await context.Database.EnsureCreatedAsync();
 
-            // Assert
-            // 5- Verify TeamNotFoundException is thrown
+                var repository = new PlayersRepository(context);
+                var player = new Player
+                {
+                    FirstName = "Test",
+                    LastName = "Player",
+                    Position = PositionType.Defender,
+                    TeamId = Guid.NewGuid()
+                };
+
+                // Act && Assert
+                await Assert.ThrowsAsync<TeamNotExistsException>(() => repository.AddAsync(player));
+            }
         }
     }
 }
